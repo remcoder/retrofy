@@ -53,7 +53,7 @@
         $el.css(propName, newColor);
       });
       
-      //$el.css("font-family", "'c64'");
+      $el.css("font-family", "'c64'");
     }
 
     function convert(el) {

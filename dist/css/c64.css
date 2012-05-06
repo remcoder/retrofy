@@ -4,6 +4,6 @@
     url("http://localhost:8000/css/font/c64.woff") format("woff")
 }
 
-* {
+/** {
   font-family: "c64";
-}
+}*/
