@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Convert a picture to C64 style</title>
+		<meta charset="utf-8" />
+		<link rel="stylesheet" type="text/css" href="css/style.css">
+    <link rel="stylesheet" type="text/css" href="css/c64.css">
+    <style>
+    
+
+    section { 
+      xwidth: 100px;
+      xheight: 100px;
+      background-color: yellow;
+      border: 8px solid blue;
+      margin: 10px 0px; 
+    }
+    p {
+      color: lime;
+      font-size: 50px;
+      background-color: hotpink;
+      text-align: center;
+    }
+    </style>
+	</head>
+	<body>
+    <section>
+    <p>
+      Retrofy v0.1
+    </p>
+  </section>
+  <div style="zoom:0.8; text-align: center;">
+    <img src="img/museumplein.jpg" />
+    <img src="img/yamaha.jpg" />
+    <img src="img/color-wheel.jpg" />
+  </div>
+  <button>retrofy!</button>
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script src="jquery.retrofy.js"></script>
+<script>
+  $("button").click(function () { $('*').retrofy(); } ) ;
+</script>
+
+	</body>
+</html>
