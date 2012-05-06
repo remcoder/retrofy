@@ -446,8 +446,8 @@ var Retrofy = (function() {
     for (var x = 0 ; x < imagedata.width ; x+=blockSize )
     {
       // sample
-      var sx = x; // Math.min(x+Math.floor(blockSize/2), imagedata.width-1);
-      var sy = y; // Math.min(y+Math.floor(blockSize/2), imagedata.height-1);
+      var sx = Math.min(x+Math.floor(blockSize/2), imagedata.width-1);
+      var sy = Math.min(y+Math.floor(blockSize/2), imagedata.height-1);
       var i = (sy * imagedata.width + sx) * 4;
       var red = bmp[i];
       var green = bmp[i+1];
@@ -460,8 +460,8 @@ var Retrofy = (function() {
       for (var ty = 0 ; ty < blockSize ; ty++ )
       for (var tx = 0 ; tx < blockSize ; tx++ )
       {
-        var ry = Math.min(y+ty, imagedata.height);
-        var rx = Math.min(x+tx, imagedata.width);
+        var ry = Math.min(y+ty, imagedata.height-1);
+        var rx = Math.min(x+tx, imagedata.width-1);
         var k = ( ry*imagedata.width + rx ) * 4;
         bmp[k] = color[0];
         bmp[k+1] = color[1];
