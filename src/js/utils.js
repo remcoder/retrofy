@@ -13,8 +13,14 @@ var Utils = (function() {
   function rgbString(r,g,b) {
     return "rgb({r},{g},{b})".format({r:r,g:g,b:b});
   }
+  
+  function parseCssUrl(input) {
+   // remove quotes and wrapping url()
+   return input.replace(/"/g,"").replace(/url\(|\)$/ig, "");
+  }
 
   return {
+    parseCssUrl : parseCssUrl,
     rgbString : rgbString
   };
 

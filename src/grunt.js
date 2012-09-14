@@ -1,5 +1,6 @@
 /*global module:false*/
 
+
 module.exports = function(grunt) {
   // Project configuration.
   grunt.initConfig({
@@ -16,6 +17,7 @@ module.exports = function(grunt) {
       files: ['js/utils.js',
           'js/Retrofy.Colors.C64.js',
           'js/retrofy.js',
+          'js/dashboard.js',
           'js/jquery.retrofy.js']
     },
 
@@ -31,6 +33,7 @@ module.exports = function(grunt) {
       }
     },
 
+
     min: {
       dist: {
         src: ['<banner:meta.banner>', '<config:concat.dist.dest>'],
@@ -39,7 +42,7 @@ module.exports = function(grunt) {
     },
 
     watch: {
-      files: 'grunt.js', '<config:lint.files>',
+      files: ['grunt.js', '<config:lint.files>'],
       tasks: 'lint concat min'
     },
 

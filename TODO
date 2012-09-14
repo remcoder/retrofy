@@ -1,18 +1,24 @@
 # TODO
 
-* support background images
-* cross browser check?
+- prevent pollution of global namespace
+- fix images that are scaled with a width or height attribute
+- support colors with an alpha channel
+- gradients?
+- chrome plugin version? (bookmarklet suffers from x-domain restrictions)
 
-* pass options to retrofy plugin:
+it should drop:
+- border radius (because square is more retro! :D)
+
+- pass options to retrofy plugin:
   - color pallete (string to choose for built-in, obj for custom pallete)
   - blockSize
 
-* rewrite bookmarkloader in coffeescript and send pull request for callback
+- rewrite bookmarkloader in coffeescript and send pull request for callback
 
-chrome plugin version? (bookmarklet suffers from x-domain restrictions)
-
-* Konami code version
+- Konami code version
 
 improvements
-* get median color?
-* maybe process stylesheets instead of html elements? (now all elements get a style attr)
+- get median color?
+
+
+

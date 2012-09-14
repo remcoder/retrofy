@@ -1,0 +1,7 @@
+09-14-2012
+- add optional dashboard to tweak color sensitivities
+
+??-??-??
+- support background images
+- remove dependency on jquery and use zepto
+
