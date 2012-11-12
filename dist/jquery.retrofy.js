@@ -1,4 +1,4 @@
-/*! jQuery.Retrofy.js - v0.1.0 - 2012-10-24
+/*! jQuery.Retrofy.js - v0.1.0 - 2012-11-12
 * http://realstuffforabstractpeople.com/
 * Copyright (c) 2012 @remcoder; Licensed MIT */
 ;/**
@@ -2896,7 +2896,7 @@ var Retrofy = (function($) {
   var colors = Retrofy.Colors.C64;
   var keys = _.keys(colors);
   var weights;
-  var threshhold = 2; 
+  var threshhold = 2;
 
   function createWeights () {
     var weights = {};
@@ -2904,16 +2904,16 @@ var Retrofy = (function($) {
     return weights;
   }
 
-  function getColorsAndWeights() { 
+  function getColorsAndWeights() {
     var result = {};
-    _.each(colors, function(value, key) { 
+    _.each(colors, function(value, key) {
       value.key = key;
       result[key] = { color: value, weight : weights[key] } ;
     });
 
     return result;
   }
-  
+
   function retrofy(element) {
     var $element = $(element);
     //console.log(element.tagName);
@@ -2932,7 +2932,7 @@ var Retrofy = (function($) {
       case "IMG":
         convertImage($element);
         break;
-      
+
       default:
         convertGeneric($element);
         break;
@@ -2964,15 +2964,15 @@ var Retrofy = (function($) {
     });
   }
 
-  function convertFont($el) {    
+  function convertFont($el) {
     $el.css("font-family", "'c64' !important");
   }
 
   function convertBackground($el) {
     var bgImage = $el.css("background-image");
-    
+
     if (!bgImage) return;
-    if (!bgImage.length) return; 
+    if (!bgImage.length) return;
     if (bgImage == "none") return;
 
     var orgSrc = $el.data("orginal-url");
@@ -2981,16 +2981,16 @@ var Retrofy = (function($) {
     if (!orgSrc)
       $el.data("orginal-url", src);
     //console.log(bgImage, src);
-    
+
     var img = new Image();
 
     // support cross-origin requested images that are served with a CORS header
     // http://www.whatwg.org/specs/web-apps/current-work/multipage/fetching-resources.html#potentially-cors-enabled-fetch
     img.crossOrigin = "anonymous";
 
-    img.onload = function() { 
+    img.onload = function() {
       var src = convertImageToDataUrl(img);
-      $el.css("background-image", "url(" + src + ")"); 
+      $el.css("background-image", "url(" + src + ")");
       img.onload = undefined;
     };
     img.src = src;
@@ -2998,8 +2998,8 @@ var Retrofy = (function($) {
 
   function tryConvertImage(el) {
     //console.log("be converted!" , el);
-    
-    try 
+
+    try
     {
       return convertImage(el);
     }
@@ -3008,7 +3008,7 @@ var Retrofy = (function($) {
       console.warn(ex,"image not loaded yet, attaching load event");
       el.onload = function () {
         //console.log("converting second try");
-        try 
+        try
         {
           return convertImage(el);
         }
@@ -3028,8 +3028,8 @@ var Retrofy = (function($) {
       return;
 
     img._converting = true;
-    
-    img.onload = function() { 
+
+    img.onload = function() {
       img.onload = undefined;
       console.log("done");
       img._converting = false;
@@ -3046,13 +3046,13 @@ var Retrofy = (function($) {
       };
       temp.src = orgUrl;
     }
-    else 
+    else
     {
       $(img).data("orginal-url", img.src);
     }
-    
+
     img.src = convertImageToDataUrl(img);
-    img._converting = false; 
+    img._converting = false;
   }
 
   function convertImageToDataUrl(img) {
@@ -3064,9 +3064,9 @@ var Retrofy = (function($) {
     //console.log("creating temp canvas" ,w,h);
     ctx.drawImage(img, 0,0);
     var bmp = ctx.getImageData(0,0,canvas.width,canvas.height);
-    
+
     convertImageData(bmp);
-    
+
     ctx.putImageData(bmp,0,0);
     return canvas.toDataURL();
   }
@@ -3080,7 +3080,7 @@ var Retrofy = (function($) {
     var bmp = imagedata.data;
     // var matches = new Array(bmp.length/4);
     var blockSize  = 4;
-    
+
     for (var y = 0 ; y < imagedata.height ; y+=blockSize )
     for (var x = 0 ; x < imagedata.width ; x+=blockSize )
     {
@@ -3106,10 +3106,10 @@ var Retrofy = (function($) {
         bmp[k+1] = color[1];
         bmp[k+2] = color[2];
         bmp[k+3] = a;
-      } 
+      }
     }
   }
-    
+
   function convertColor(red,green,blue) {
     var c64_color = null;
     var min_error = Infinity;
@@ -3124,14 +3124,14 @@ var Retrofy = (function($) {
       var dg = green - guess[1];
       var db = blue - guess[2];
       var error = dr*dr/w + dg*dg/w + db*db/w;
-      
+
       if (error < min_error)
       {
         c64_color = color;
         min_error = error;
       }
 
-      if (error < threshhold) 
+      if (error < threshhold)
       {
         break;
       }
@@ -3155,13 +3155,14 @@ var Retrofy = (function($) {
   init();
 
   return {
+    convertColor : convertColor,
+    convertImageData: convertImageData,
     getColorsAndWeights :  getColorsAndWeights, // TODO : not expose this as immutable
     retrofy : retrofy,
-    convertColor : convertColor,
-    setWeight : setWeight,
-    setThreshold : setThreshold
+    setThreshold : setThreshold,
+    setWeight : setWeight
   };
-  
+
 }(Zepto));
 
 ;/*global $,dat,_,Retrofy */
