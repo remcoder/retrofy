@@ -1,4 +1,4 @@
-/*globals document, Zepto, _, console, RGBColor, Utils */
+/*global  document, Zepto, _, console, RGBColor, Utils */
 var Retrofy = (function($) {
   "use strict";
 
@@ -82,7 +82,7 @@ var Retrofy = (function($) {
     
     if (!bgImage) return;
     if (!bgImage.length) return; 
-    if (bgImage == 'none') return;
+    if (bgImage == "none") return;
 
     var orgSrc = $el.data("orginal-url");
     var src = orgSrc || Utils.parseCssUrl(bgImage);
@@ -95,7 +95,7 @@ var Retrofy = (function($) {
 
     // support cross-origin requested images that are served with a CORS header
     // http://www.whatwg.org/specs/web-apps/current-work/multipage/fetching-resources.html#potentially-cors-enabled-fetch
-    img.crossOrigin = 'anonymous';
+    img.crossOrigin = "anonymous";
 
     img.onload = function() { 
       var src = convertImageToDataUrl(img);
@@ -148,7 +148,7 @@ var Retrofy = (function($) {
     if (orgUrl && orgUrl.length)
     {
       var temp = new Image();
-      temp.crossOrigin = 'anonymous';
+      temp.crossOrigin = "anonymous";
       temp.onload = function() {
         //console.log("temp done");
         img.src = convertImageToDataUrl(temp);
@@ -168,8 +168,8 @@ var Retrofy = (function($) {
     //console.log("convert to data url");
     var canvas = document.createElement("canvas");
     var ctx = canvas.getContext("2d");
-    var w = canvas.width = img.width;
-    var h = canvas.height = img.height;
+    canvas.width = img.width;
+    canvas.height = img.height;
     //console.log("creating temp canvas" ,w,h);
     ctx.drawImage(img, 0,0);
     var bmp = ctx.getImageData(0,0,canvas.width,canvas.height);
@@ -187,7 +187,7 @@ var Retrofy = (function($) {
   // FIXME: try optimizing by reusing imagedata objects between successive calls.
   function convertImageData(imagedata, alpha) {
     var bmp = imagedata.data;
-    var matches = new Array(bmp.length/4);
+    // var matches = new Array(bmp.length/4);
     var blockSize  = 4;
     
     for (var y = 0 ; y < imagedata.height ; y+=blockSize )
@@ -245,7 +245,6 @@ var Retrofy = (function($) {
         break;
       }
     }
-    
 
     return { color: c64_color, error:min_error, earlyExit : c };
   }

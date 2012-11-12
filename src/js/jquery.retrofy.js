@@ -1,4 +1,4 @@
-/*globals Zepto, document,RGBColor,Utils,Retrofy,Dashboard */
+/*global Zepto,Retrofy,Dashboard */
 (function($) {
   "use strict";
 

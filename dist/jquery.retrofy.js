@@ -1,4 +1,4 @@
-/*! jQuery.Retrofy.js - v0.1.0 - 2012-09-15
+/*! jQuery.Retrofy.js - v0.1.0 - 2012-10-24
 * http://realstuffforabstractpeople.com/
 * Copyright (c) 2012 @remcoder; Licensed MIT */
 ;/**
@@ -2797,13 +2797,13 @@ window.Zepto = Zepto
   })
 })(Zepto)
 ;var Utils = (function() {
-
+  "use strict";
 
   String.prototype.format = function (o) {
     return this.replace(/\{([^{}]*)\}/g,
       function (a, b) {
         var r = o[b];
-        return typeof r === 'string' || typeof r === 'number' ? r : a;
+        return typeof r === "string" || typeof r === "number" ? r : a;
       }
     );
   };
@@ -2889,7 +2889,7 @@ Retrofy.Colors.C64 = {
         "name": "LGrey",
         "rgb": [192, 192, 192]
     }
-};;/*globals document, Zepto, _, console, RGBColor, Utils */
+};;/*global  document, Zepto, _, console, RGBColor, Utils */
 var Retrofy = (function($) {
   "use strict";
 
@@ -2973,7 +2973,7 @@ var Retrofy = (function($) {
     
     if (!bgImage) return;
     if (!bgImage.length) return; 
-    if (bgImage == 'none') return;
+    if (bgImage == "none") return;
 
     var orgSrc = $el.data("orginal-url");
     var src = orgSrc || Utils.parseCssUrl(bgImage);
@@ -2986,7 +2986,7 @@ var Retrofy = (function($) {
 
     // support cross-origin requested images that are served with a CORS header
     // http://www.whatwg.org/specs/web-apps/current-work/multipage/fetching-resources.html#potentially-cors-enabled-fetch
-    img.crossOrigin = 'anonymous';
+    img.crossOrigin = "anonymous";
 
     img.onload = function() { 
       var src = convertImageToDataUrl(img);
@@ -3039,7 +3039,7 @@ var Retrofy = (function($) {
     if (orgUrl && orgUrl.length)
     {
       var temp = new Image();
-      temp.crossOrigin = 'anonymous';
+      temp.crossOrigin = "anonymous";
       temp.onload = function() {
         //console.log("temp done");
         img.src = convertImageToDataUrl(temp);
@@ -3059,8 +3059,8 @@ var Retrofy = (function($) {
     //console.log("convert to data url");
     var canvas = document.createElement("canvas");
     var ctx = canvas.getContext("2d");
-    var w = canvas.width = img.width;
-    var h = canvas.height = img.height;
+    canvas.width = img.width;
+    canvas.height = img.height;
     //console.log("creating temp canvas" ,w,h);
     ctx.drawImage(img, 0,0);
     var bmp = ctx.getImageData(0,0,canvas.width,canvas.height);
@@ -3078,7 +3078,7 @@ var Retrofy = (function($) {
   // FIXME: try optimizing by reusing imagedata objects between successive calls.
   function convertImageData(imagedata, alpha) {
     var bmp = imagedata.data;
-    var matches = new Array(bmp.length/4);
+    // var matches = new Array(bmp.length/4);
     var blockSize  = 4;
     
     for (var y = 0 ; y < imagedata.height ; y+=blockSize )
@@ -3136,7 +3136,6 @@ var Retrofy = (function($) {
         break;
       }
     }
-    
 
     return { color: c64_color, error:min_error, earlyExit : c };
   }
@@ -3165,7 +3164,7 @@ var Retrofy = (function($) {
   
 }(Zepto));
 
-;/*globals $,dat,_,Retrofy */
+;/*global $,dat,_,Retrofy */
 function Dashboard($elements) {
   "use strict";
 
@@ -3179,15 +3178,15 @@ function Dashboard($elements) {
   var gui = new dat.GUI({ autoPlace: false });
 
   function slideDown() {
-    $dashboard.css({ 
+    $dashboard.css({
       top : -$dashboard.height() - $button.height()
     });
 
-    $dashboard.animate({ 
+    $dashboard.animate({
       top : -$dashboard.height()
-    }, 
-    { 
-      duration: 400, 
+    },
+    {
+      duration: 400,
       easing: "ease-out"
     });
   }
@@ -3219,11 +3218,11 @@ function Dashboard($elements) {
 
   // inject css
   var css = "#dashboard {  position: fixed;  background-color: rgba(0,0,0,1);  color: lime;  left:0;  font-family: 'PT Mono', sans-serif;  font-size: 14px;  padding: 20px;  border-radius: 10px;}.dashboard-panel, .dashboard-widget {  margin-right: 15px;  display: inline-block;  vertical-align: top;}#controls {  display: inline-block;  vertical-align: top;}#dashboard .close-button {   display: none;}.dg.main {  font-size: 13px;}button.dashboard-button {  display: inline-block;  font-size: 16px;  border:0;  background-color: black;  color: #eee;  border-radius: 5px 5px 5px 5px;  padding: 10px;  font-family: c64;}button:hover {  text-shadow: #8f8 0px 0px 5px;}.bottom-panel {  position: absolute;  bottom: -40px;}";
-  $('head').append($('<style>').text(css));
+  $("head").append($("<style>").text(css));
 
   // inject html
   $dashboard = $('<div id="dashboard" class="hidden"><div class="widgets"><div id="controls" class="dashboard-widget"></div><div id="status" class="dashboard-widget"></div></div><div class="bottom-panel"><button class="dashboard-button retro" data-role="dashboard-open">retrofy</button></div></div>');
-  $('body').append($dashboard);
+  $("body").append($dashboard);
 
   $button = $dashboard.find("[data-role~='dashboard-open']");
   $controls = $("#controls");
@@ -3238,14 +3237,14 @@ function Dashboard($elements) {
 
   $button.click(toggleDashboard);
 
-  _.each(colorsAndWeights, function(obj, key) {
+  _.each(colorsAndWeights, function(obj) {
     labels[obj.color.name] = 1;
   });
 
   for (var key in colorsAndWeights)
     createColorController( colorsAndWeights[key] )  ;
 
-  labels["threshhold"] = 1;
+  labels.threshhold = 1;
 
   var threshholdController = gui.add(labels, "threshhold" , 0, 88); 
   threshholdController.onChange(function(value) {
@@ -3259,7 +3258,7 @@ function Dashboard($elements) {
 
   return {};
 }
-;/*globals Zepto, document,RGBColor,Utils,Retrofy,Dashboard */
+;/*global Zepto,Retrofy,Dashboard */
 (function($) {
   "use strict";
 
