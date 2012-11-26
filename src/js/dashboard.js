@@ -1,94 +1,105 @@
 /*global $,dat,_,Retrofy */
-function Dashboard($elements) {
-  "use strict";
 
-  var $dashboard, $button, $controls, 
-    debug = false,
-    showOverlay = false;
+(function ($) {
 
-  var colorsAndWeights = Retrofy.getColorsAndWeights();
-  var labels = {};
-  // dat.gui.js
-  var gui = new dat.GUI({ autoPlace: false });
+    function Dashboard($elements) {
+      "use strict";
 
-  function slideDown() {
-    $dashboard.css({
-      top : -$dashboard.height() - $button.height()
-    });
+      var $dashboard, $button, $controls,
+        debug = false,
+        showOverlay = false;
 
-    $dashboard.animate({
-      top : -$dashboard.height()
-    },
-    {
-      duration: 400,
-      easing: "ease-out"
-    });
-  }
+      var colorsAndWeights = Retrofy.getColorsAndWeights();
+      var labels = {};
+      // dat.gui.js
+      var gui = new dat.GUI({ autoPlace: false });
 
-  function toggleDashboard() {
-    debug=!debug;
-    $dashboard.animate({ 
-      top : debug ? 0 : -$dashboard.height()
-    }, 
-    { 
-      duration : 200
-    }); 
-  }
+      function slideDown() {
+        $dashboard.css({
+          top : -$dashboard.outerHeight() - $button.outerHeight()
+        });
 
-  //console.log(colorsAndWeights);
+        $dashboard.animate({
+          top : -$dashboard.outerHeight()
+        },
+        {
+          duration: 400
+          //easing: "ease-out"
+        });
+      }
 
-  function createColorController(colorAndWeight) {
-    var label = colorAndWeight.color.name;
-    var controller = gui.add(labels, label , 0, 3); 
-    var key = colorAndWeight.color.key;
-    controller.onChange(_.throttle(function(value) {
-      //console.log("update ",key , value);
-      Retrofy.setWeight(key,value);
-      $elements.retrofy();
-    },200));
-  }
+      function toggleDashboard() {
+        debug=!debug;
+        $dashboard.animate({
+          top : debug ? 0 : -$dashboard.outerHeight()
+        },
+        {
+          duration : 200
+        });
+      }
 
-  // init
+      //console.log(colorsAndWeights);
 
-  // inject css
-  var css = "#dashboard {  position: fixed;  background-color: rgba(0,0,0,1);  color: lime;  left:0;  font-family: 'PT Mono', sans-serif;  font-size: 14px;  padding: 20px;  border-radius: 10px;}.dashboard-panel, .dashboard-widget {  margin-right: 15px;  display: inline-block;  vertical-align: top;}#controls {  display: inline-block;  vertical-align: top;}#dashboard .close-button {   display: none;}.dg.main {  font-size: 13px;}button.dashboard-button {  display: inline-block;  font-size: 16px;  border:0;  background-color: black;  color: #eee;  border-radius: 5px 5px 5px 5px;  padding: 10px;  font-family: c64;}button:hover {  text-shadow: #8f8 0px 0px 5px;}.bottom-panel {  position: absolute;  bottom: -40px;}";
-  $("head").append($("<style>").text(css));
+      function createColorController(colorAndWeight) {
+        var label = colorAndWeight.color.name;
+        var controller = gui.add(labels, label , 0, 3);
+        var key = colorAndWeight.color.key;
+        controller.onChange(_.throttle(function(value) {
+          //console.log("update ",key , value);
+          Retrofy.setWeight(key,value);
+          $elements.retrofy();
+        },200));
+      }
 
-  // inject html
-  $dashboard = $('<div id="dashboard" class="hidden"><div class="widgets"><div id="controls" class="dashboard-widget"></div><div id="status" class="dashboard-widget"></div></div><div class="bottom-panel"><button class="dashboard-button retro" data-role="dashboard-open">retrofy</button></div></div>');
-  $("body").append($dashboard);
+      // init
 
-  $button = $dashboard.find("[data-role~='dashboard-open']");
-  $controls = $("#controls");
+      // inject css
+      var css = "#dashboard {  position: fixed;  background-color: rgba(0,0,0,1);  color: lime;  left:0;  font-family: 'PT Mono', sans-serif;  font-size: 14px;  padding: 20px;  border-radius: 10px;}.dashboard-panel, .dashboard-widget {  margin-right: 15px;  display: inline-block;  vertical-align: top;}#controls {  display: inline-block;  vertical-align: top;}#dashboard .close-button {   display: none;}.dg.main {  font-size: 13px;}button.dashboard-button {  display: inline-block;  font-size: 16px;  border:0;  background-color: black;  color: #eee;  border-radius: 5px 5px 5px 5px;  padding: 10px;  font-family: c64;}button:hover {  text-shadow: #8f8 0px 0px 5px;}.bottom-panel {  position: absolute;  bottom: -40px;}";
+      $("head").append($("<style>").text(css));
 
-  //gui.remember(Settings);
-  $controls.append( gui.domElement );
+      // inject html
+      $dashboard = $('<div id="dashboard" class="hidden"><div class="widgets"><div id="controls" class="dashboard-widget"></div><div id="status" class="dashboard-widget"></div></div><div class="bottom-panel"><button class="dashboard-button retro" data-role="dashboard-open">retrofy</button></div></div>');
+      $("body").append($dashboard);
 
-  $(document).keydown(function(e) { 
-    if ( e.which == 27 ) toggleDashboard();    
-    if ( e.which == 79 ) showOverlay = !showOverlay;
-  });
+      $button = $dashboard.find("[data-role~='dashboard-open']");
+      $controls = $("#controls");
 
-  $button.click(toggleDashboard);
+      //gui.remember(Settings);
+      $controls.append( gui.domElement );
 
-  _.each(colorsAndWeights, function(obj) {
-    labels[obj.color.name] = 1;
-  });
+      $(document).keydown(function(e) {
+        if ( e.which == 27 ) toggleDashboard();
+        if ( e.which == 79 ) showOverlay = !showOverlay;
+      });
 
-  for (var key in colorsAndWeights)
-    createColorController( colorsAndWeights[key] )  ;
+      $button.click(toggleDashboard);
 
-  labels.threshhold = 1;
+      _.each(colorsAndWeights, function(obj) {
+        labels[obj.color.name] = 1;
+      });
 
-  var threshholdController = gui.add(labels, "threshhold" , 0, 88); 
-  threshholdController.onChange(function(value) {
-    Retrofy.setThreshold(value);
-    $elements.retrofy();
-  });
+      for (var key in colorsAndWeights)
+        createColorController( colorsAndWeights[key] )  ;
+
+      labels.threshhold = 1;
+
+      var threshholdController = gui.add(labels, "threshhold" , 0, 88);
+      threshholdController.onChange(function(value) {
+        Retrofy.setThreshold(value);
+        $elements.retrofy();
+      });
 
 
-  $dashboard.show();
-  slideDown();
+      $dashboard.show();
+      slideDown();
 
-  return {};
-}
+      return {
+        slideDown : slideDown,
+        toggleDashboard : toggleDashboard
+      };
+    }
+
+    window.Retrofy = Retrofy || {};
+    window.Retrofy.Dashboard = Dashboard;
+
+}(window.jQuery || window.Zepto));

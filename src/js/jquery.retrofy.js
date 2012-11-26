@@ -10,9 +10,9 @@
       settings = $.extend({}, defaults, options);
       $.fn.retrofy.defaults = defaults;
       $.fn.retrofy.settings = settings;
-      
+
       if (settings.dashboard === true)
-        dashboard = dashboard || new Dashboard($elements);
+        dashboard = dashboard || new Retrofy.Dashboard($elements);
 
       return $elements.each(function() { Retrofy.retrofy(this); });
     }

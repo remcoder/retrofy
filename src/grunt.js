@@ -16,6 +16,7 @@ module.exports = function(grunt) {
     lint: {
       files: ['js/utils.js',
           'js/Retrofy.Colors.C64.js',
+          'js/Retrofy.Colors.NES.js',
           'js/retrofy.js',
           'js/dashboard.js',
           'js/jquery.retrofy.js']

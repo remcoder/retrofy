@@ -66,3 +66,9 @@ Retrofy.Colors.C64 = {
         "rgb": [192, 192, 192]
     }
 };
+
+// // convert to css
+// for ( var k in Retrofy.Colors.C64 ) {
+//   var color = Retrofy.Colors.C64[k];
+//   console.log("."+color.name+" { color: rgb(" + color.rgb[0] +"," + color.rgb[1] + "," + color.rgb[2] + "); }");
+//  }

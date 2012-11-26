@@ -2,7 +2,7 @@
 var Retrofy = (function($) {
   "use strict";
 
-  var colors = Retrofy.Colors.C64;
+  var colors = Retrofy.Colors.NES;
   var keys = _.keys(colors);
   var weights;
   var threshhold = 2;
@@ -223,7 +223,7 @@ var Retrofy = (function($) {
     var c64_color = null;
     var min_error = Infinity;
 
-    for (var c=0 ; c<keys.length ; c++)
+    for (var c in colors)
     {
       var color = colors[c];
       var guess = color.rgb;
