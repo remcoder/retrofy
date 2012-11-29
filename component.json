@@ -1,0 +1,8 @@
+{
+  "name": "Retrofy",
+  "version": "0.0.1",
+  "main": ["dist/jquery.retrofy.js"],
+  "dependencies": {
+    "jquery": ">=1.4.0"
+  }
+}
