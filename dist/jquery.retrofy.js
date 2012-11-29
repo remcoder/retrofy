@@ -1,4 +1,4 @@
-/*! jQuery.Retrofy.js - v0.1.0 - 2012-11-29
+/*! jQuery.Retrofy.js - v0.1.0 - 2012-11-30
 * http://realstuffforabstractpeople.com/
 * Copyright (c) 2012 @remcoder; Licensed MIT */
 ;/**
@@ -2842,9 +2842,12 @@ window.Zepto = Zepto
     if (!colors)
       throw new Error("palette '{p}' not found".format({p:palette}));
 
-    var keys = _.keys(colors);
     var weights;
     var threshhold = 2;
+
+    function setPalette(palette) {
+      init(palette);
+    }
 
     function createWeights () {
       var weights = {};
@@ -2854,9 +2857,11 @@ window.Zepto = Zepto
 
     function getColorsAndWeights() {
       var result = {};
-      _.each(colors, function(value, key) {
-        value.key = key;
-        result[key] = { color: value, weight : weights[key] } ;
+      _.each(colors, function(color, key) {
+        color.key = key;
+        if (!color.name)
+          color.name = key;
+        result[key] = { color: color, weight : weights[key] } ;
       });
 
       return result;
@@ -3096,17 +3101,20 @@ window.Zepto = Zepto
       threshhold = t*t;
     }
 
-    function init() {
+    function init(palette) {
+      colors = Retrofy.Colors[palette];
       weights = createWeights();
     }
 
-    init();
+    init(palette);
 
     return {
       convertColor : convertColor,
       convertImageData: convertImageData,
       getColorsAndWeights :  getColorsAndWeights, // TODO : not expose this as immutable
+      getPalette : function() { return palette; },
       retrofy : retrofy,
+      setPalette : setPalette,
       setThreshold : setThreshold,
       setWeight : setWeight
     };
@@ -3298,8 +3306,10 @@ window.Zepto = Zepto
       debug = false,
       showOverlay = false;
 
-    var colorsAndWeights = retrofy.getColorsAndWeights();
+    var colorControllers = [];
+
     var labels = {};
+    labels.palette = retrofy.getPalette();
     // dat.gui.js
     var gui = new dat.GUI({ autoPlace: false });
 
@@ -3338,6 +3348,8 @@ window.Zepto = Zepto
         retrofy.setWeight(key,value);
         $elements.retrofy();
       },200));
+
+      return controller;
     }
 
     // init
@@ -3363,14 +3375,33 @@ window.Zepto = Zepto
 
     $button.click(toggleDashboard);
 
-    _.each(colorsAndWeights, function(obj) {
-      labels[obj.color.name] = 1;
+    function initColorSettings() {
+      colorControllers = [];
+      var colorsAndWeights = retrofy.getColorsAndWeights();
+      _.each(colorsAndWeights, function(obj) {
+        labels[obj.color.name] = 1;
+      });
+
+      for (var key in colorsAndWeights) {
+        var c = createColorController( colorsAndWeights[key] );
+        colorControllers.push(c);
+      }
+    }
+
+
+
+    var paletteController = gui.add(labels, "palette" , ["C64", "NES", "ZXSpectrum"] );
+    paletteController.onChange(function(value) {
+      retrofy.setPalette(value);
+
+      _.each(colorControllers, function(contr) {
+        gui.remove(contr);
+      });
+      initColorSettings();
+      $elements.retrofy();
     });
 
-    for (var key in colorsAndWeights)
-      createColorController( colorsAndWeights[key] )  ;
-
-    labels.threshhold = 1;
+     labels.threshhold = 1;
 
     var threshholdController = gui.add(labels, "threshhold" , 0, 88);
     threshholdController.onChange(function(value) {
@@ -3378,7 +3409,7 @@ window.Zepto = Zepto
       $elements.retrofy();
     });
 
-
+    initColorSettings();
     $dashboard.show();
     slideDown();
 

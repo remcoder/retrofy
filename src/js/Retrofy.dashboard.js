@@ -9,8 +9,10 @@
       debug = false,
       showOverlay = false;
 
-    var colorsAndWeights = retrofy.getColorsAndWeights();
+    var colorControllers = [];
+
     var labels = {};
+    labels.palette = retrofy.getPalette();
     // dat.gui.js
     var gui = new dat.GUI({ autoPlace: false });
 
@@ -49,6 +51,8 @@
         retrofy.setWeight(key,value);
         $elements.retrofy();
       },200));
+
+      return controller;
     }
 
     // init
@@ -74,14 +78,33 @@
 
     $button.click(toggleDashboard);
 
-    _.each(colorsAndWeights, function(obj) {
-      labels[obj.color.name] = 1;
+    function initColorSettings() {
+      colorControllers = [];
+      var colorsAndWeights = retrofy.getColorsAndWeights();
+      _.each(colorsAndWeights, function(obj) {
+        labels[obj.color.name] = 1;
+      });
+
+      for (var key in colorsAndWeights) {
+        var c = createColorController( colorsAndWeights[key] );
+        colorControllers.push(c);
+      }
+    }
+
+
+
+    var paletteController = gui.add(labels, "palette" , ["C64", "NES", "ZXSpectrum"] );
+    paletteController.onChange(function(value) {
+      retrofy.setPalette(value);
+
+      _.each(colorControllers, function(contr) {
+        gui.remove(contr);
+      });
+      initColorSettings();
+      $elements.retrofy();
     });
 
-    for (var key in colorsAndWeights)
-      createColorController( colorsAndWeights[key] )  ;
-
-    labels.threshhold = 1;
+     labels.threshhold = 1;
 
     var threshholdController = gui.add(labels, "threshhold" , 0, 88);
     threshholdController.onChange(function(value) {
@@ -89,7 +112,7 @@
       $elements.retrofy();
     });
 
-
+    initColorSettings();
     $dashboard.show();
     slideDown();
 

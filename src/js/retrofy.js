@@ -8,9 +8,12 @@
     if (!colors)
       throw new Error("palette '{p}' not found".format({p:palette}));
 
-    var keys = _.keys(colors);
     var weights;
     var threshhold = 2;
+
+    function setPalette(palette) {
+      init(palette);
+    }
 
     function createWeights () {
       var weights = {};
@@ -20,9 +23,11 @@
 
     function getColorsAndWeights() {
       var result = {};
-      _.each(colors, function(value, key) {
-        value.key = key;
-        result[key] = { color: value, weight : weights[key] } ;
+      _.each(colors, function(color, key) {
+        color.key = key;
+        if (!color.name)
+          color.name = key;
+        result[key] = { color: color, weight : weights[key] } ;
       });
 
       return result;
@@ -262,17 +267,20 @@
       threshhold = t*t;
     }
 
-    function init() {
+    function init(palette) {
+      colors = Retrofy.Colors[palette];
       weights = createWeights();
     }
 
-    init();
+    init(palette);
 
     return {
       convertColor : convertColor,
       convertImageData: convertImageData,
       getColorsAndWeights :  getColorsAndWeights, // TODO : not expose this as immutable
+      getPalette : function() { return palette; },
       retrofy : retrofy,
+      setPalette : setPalette,
       setThreshold : setThreshold,
       setWeight : setWeight
     };

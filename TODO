@@ -1,5 +1,7 @@
 # TODO
 
+- fix palette option in dat.GUI (recreate all the controllers)
+
 - dashboard should have previews of the colors used.
 - fix images that are scaled with a width or height attribute
 - support colors with an alpha channel
