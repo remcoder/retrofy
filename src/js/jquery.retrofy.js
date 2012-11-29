@@ -1,23 +1,28 @@
-/*global Zepto,Retrofy,Dashboard */
+/*global zepQuery,Retrofy */
+
 (function($) {
   "use strict";
 
+  var dashboard;
+  var retrofy;
+  var defaults = {}, settings = {};
+
   $.fn.retrofy = function(options) {
-    var defaults = {}, settings = {};
-    var dashboard;
 
-    function init($elements, options) {
-      settings = $.extend({}, defaults, options);
-      $.fn.retrofy.defaults = defaults;
-      $.fn.retrofy.settings = settings;
+    settings = $.extend(settings, defaults, options);
+    $.fn.retrofy.defaults = defaults;
+    $.fn.retrofy.settings = settings;
 
-      if (settings.dashboard === true)
-        dashboard = dashboard || new Retrofy.Dashboard($elements);
+    if (!settings.palette)
+      throw new Error("parameter 'palette' missing");
 
-      return $elements.each(function() { Retrofy.retrofy(this); });
-    }
+    retrofy = retrofy || new Retrofy(options.palette);
 
-    return init(this, options);
+    if (settings.dashboard === true)
+      dashboard = dashboard || new Retrofy.Dashboard(this, retrofy);
+
+    return this.each(function() { retrofy.retrofy(this); });
+
   };
 
-}(window.jQuery || Zepto)); // fallback to the included Zepto if jQuery is not found
+}(zepQuery));

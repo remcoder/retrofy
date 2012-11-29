@@ -1,8 +1,11 @@
-// from: http://www.thealmightyguru.com/Games/Hacking/Wiki/index.php?title=NES_Palette
-var Retrofy = Retrofy || {};
-Retrofy.Colors = Retrofy.Colors || {};
+/*globals Retrofy */
 
-Retrofy.Colors.NES = {
+// from: http://www.thealmightyguru.com/Games/Hacking/Wiki/index.php?title=NES_Palette
+
+(function() {
+  "use strict";
+
+  Retrofy.Colors.NES = {
     "0" : { rgb: [0,0,0] },
     "1" : { rgb: [124,124,124] },
     "2" : { rgb: [0,0,252] },
@@ -58,4 +61,6 @@ Retrofy.Colors.NES = {
     "60" : { rgb: [184,248,216] },
     "61" : { rgb: [0,252,252] },
     "62" : { rgb: [248,216,248] }
-};
+  };
+
+}());

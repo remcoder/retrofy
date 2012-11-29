@@ -14,12 +14,14 @@ module.exports = function(grunt) {
     },
 
     lint: {
-      files: ['js/utils.js',
+      files: [
+          'js/zepQuery.js',
+          'js/utils.js',
+          'js/retrofy.js',
           'js/Retrofy.Colors.C64.js',
           'js/Retrofy.Colors.NES.js',
           'js/Retrofy.Colors.ZXSpectrum.js',
-          'js/retrofy.js',
-          'js/dashboard.js',
+          'js/Retrofy.dashboard.js',
           'js/jquery.retrofy.js']
     },
 

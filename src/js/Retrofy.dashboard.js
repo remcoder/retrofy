@@ -1,4 +1,4 @@
-/*global zepQuery,dat,_ */
+/*global zepQuery,dat,_, Retrofy */
 
 (function ($) {
   "use strict";
@@ -46,7 +46,7 @@
       var key = colorAndWeight.color.key;
       controller.onChange(_.throttle(function(value) {
         //console.log("update ",key , value);
-        Retrofy.setWeight(key,value);
+        retrofy.setWeight(key,value);
         $elements.retrofy();
       },200));
     }
@@ -85,7 +85,7 @@
 
     var threshholdController = gui.add(labels, "threshhold" , 0, 88);
     threshholdController.onChange(function(value) {
-      Retrofy.setThreshold(value);
+      retrofy.setThreshold(value);
       $elements.retrofy();
     });
 

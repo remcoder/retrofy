@@ -1,6 +1,6 @@
 # TODO
 
-- prevent pollution of global namespace
+- dashboard should have previews of the colors used.
 - fix images that are scaled with a width or height attribute
 - support colors with an alpha channel
 - gradients?
@@ -10,7 +10,6 @@ it should drop:
 - border radius (because square is more retro! :D)
 
 - pass options to retrofy plugin:
-  - color pallete (string to choose for built-in, obj for custom pallete)
   - blockSize
 
 - rewrite bookmarkloader in coffeescript and send pull request for callback

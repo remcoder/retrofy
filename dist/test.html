@@ -7,7 +7,7 @@
     <link rel="stylesheet" type="text/css" href="css/c64.css">
     <!-- <link rel="stylesheet" type="text/css" href="css/dashboard.css"> -->
     <style>
-    
+
     body {
       font-family: Arial;
       background-image: url('img/red-silk.jpg');
@@ -25,11 +25,11 @@
       position: relative;
     }
 
-    h1 { 
+    h1 {
       xwidth: 100px;
       xheight: 100px;
       background-color: rgba(255,128,0,0.8);
-      margin: 50px 100px; 
+      margin: 50px 100px;
 
       font-size: 50px;
       text-align: center;
@@ -48,7 +48,7 @@
       background-color: #282828;
       color: #ddd;
       border-radius: 15px 15px 15px 15px;
-      padding: 15px 30px;  
+      padding: 15px 30px;
       box-shadow: 0px 0px 15px #000;
       text-shadow: #000 0px 0px 15px ;
     }
@@ -61,19 +61,19 @@
 	</head>
 	<body >
     <h1>Retrofy v0.1 <!-- <img height="100" src="https://twimg0-a.akamaihd.net/profile_images/1638476622/image.jpg" /> --></h1>
-  
+
   <section style="zoom:0.8; text-align: center;">
     <button class="retrofy">retrofy me !</button>
     <p>
-      
+
       <img crossorigin='Anonymous' src="img/yamaha.jpg" />
       <img crossorigin='Anonymous' height="400" src="img/color-wheel.jpg" width="400" />
     </p>
   </section>
-    
+
 <script src="jquery.retrofy.js"></script>
 <script>
-  $("button").click(function () { $('*').retrofy({dashboard:true}); } ) ;
+  $("button").click(function () { $('*').retrofy({ palette: "C64", dashboard:true }); } ) ;
 </script>
 
 	</body>

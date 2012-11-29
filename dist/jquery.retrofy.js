@@ -2796,6 +2796,16 @@ window.Zepto = Zepto
     $.fn[m] = function(callback){ return this.bind(m, callback) }
   })
 })(Zepto)
+;/*globals jQuery,Zepto */
+
+;(function() {
+
+    window.zepQuery = window.jQuery || window.Zepto;
+    var $ = window.zepQuery;
+
+    // Zepto doesn't have outerHeight
+    $.fn.outerHeight = $.fn.outerHeight || $.fn.height;
+}());
 ;var Utils = (function() {
   "use strict";
 
@@ -2822,9 +2832,298 @@ window.Zepto = Zepto
     rgbString : rgbString
   };
 
-}());;var Retrofy = Retrofy || {};
-Retrofy.Colors = Retrofy.Colors || {};
-Retrofy.Colors.C64 = {
+}());;/*global  document, zepQuery, _, console, RGBColor, Utils */
+(function($) {
+  "use strict";
+
+  var Retrofy = function(palette) {
+
+    var colors = Retrofy.Colors[palette];
+    if (!colors)
+      throw new Error("palette '{p}' not found".format({p:palette}));
+
+    var keys = _.keys(colors);
+    var weights;
+    var threshhold = 2;
+
+    function createWeights () {
+      var weights = {};
+      _.each(colors, function(v, k) { weights[k] = 1; });
+      return weights;
+    }
+
+    function getColorsAndWeights() {
+      var result = {};
+      _.each(colors, function(value, key) {
+        value.key = key;
+        result[key] = { color: value, weight : weights[key] } ;
+      });
+
+      return result;
+    }
+
+    function retrofy(element) {
+      var $element = $(element);
+      //console.log(element.tagName);
+      switch (element.tagName)
+      {
+        // skip these
+        case "HTML":
+        case "HEAD":
+        case "STYLE":
+        case "SCRIPT":
+        case "TITLE":
+        case "META":
+        case "LINK":
+          break;
+
+        case "IMG":
+          convertImage($element);
+          break;
+
+        default:
+          convertGeneric($element);
+          break;
+      }
+    }
+
+    function convertGeneric($element) {
+      convertColors($element);
+      convertBackground($element);
+      convertFont($element);
+    }
+
+    function convertColors(el) {
+      var colorProps = ["color", "background-color", "border-color"];
+      var $el = $(el);
+      $.each(colorProps, function(i,propName) {
+        var orgColor = $el.data("original-" + propName);
+        var color = orgColor || $el.css(propName);
+        if (!orgColor) $el.data("original-" + propName, color);
+
+        if (!color | color == "rgba(0, 0, 0, 0)") return;
+        var parsedColor = new RGBColor(color);
+        // console.log(parsedColor);
+        var rgb = convertColor(parsedColor.r, parsedColor.g, parsedColor.b).color.rgb;
+        // console.log(rgb);
+        var newColor = Utils.rgbString(rgb[0],rgb[1],rgb[2]);
+        // console.log(el.tagName, propName,color, parsedColor, rgb, newColor);
+        $el.css(propName, newColor);
+      });
+    }
+
+    function convertFont($el) {
+      $el.css("font-family", "'c64' !important");
+    }
+
+    function convertBackground($el) {
+      var bgImage = $el.css("background-image");
+
+      if (!bgImage) return;
+      if (!bgImage.length) return;
+      if (bgImage == "none") return;
+
+      var orgSrc = $el.data("orginal-url");
+      var src = orgSrc || Utils.parseCssUrl(bgImage);
+
+      if (!orgSrc)
+        $el.data("orginal-url", src);
+      //console.log(bgImage, src);
+
+      var img = new Image();
+
+      // support cross-origin requested images that are served with a CORS header
+      // http://www.whatwg.org/specs/web-apps/current-work/multipage/fetching-resources.html#potentially-cors-enabled-fetch
+      img.crossOrigin = "anonymous";
+
+      img.onload = function() {
+        var src = convertImageToDataUrl(img);
+        $el.css("background-image", "url(" + src + ")");
+        img.onload = undefined;
+      };
+      img.src = src;
+    }
+
+    function tryConvertImage(el) {
+      //console.log("be converted!" , el);
+
+      try
+      {
+        return convertImage(el);
+      }
+      catch(ex)
+      {
+        console.warn(ex,"image not loaded yet, attaching load event");
+        el.onload = function () {
+          //console.log("converting second try");
+          try
+          {
+            return convertImage(el);
+          }
+          catch(ex2)
+          {
+            console.error(ex2);
+          }
+        };
+      }
+    }
+
+    // FIXME: for CORS support, add crossOrigin = 'anonymous'
+    function convertImage($img) {
+      var img = $img[0];
+
+      if (img._converting)
+        return;
+
+      img._converting = true;
+
+      img.onload = function() {
+        img.onload = undefined;
+        console.log("done");
+        img._converting = false;
+      };
+
+      var orgUrl = $(img).data("orginal-url");
+      if (orgUrl && orgUrl.length)
+      {
+        var temp = new Image();
+        temp.crossOrigin = "anonymous";
+        temp.onload = function() {
+          //console.log("temp done");
+          img.src = convertImageToDataUrl(temp);
+        };
+        temp.src = orgUrl;
+      }
+      else
+      {
+        $(img).data("orginal-url", img.src);
+      }
+
+      img.src = convertImageToDataUrl(img);
+      img._converting = false;
+    }
+
+    function convertImageToDataUrl(img) {
+      //console.log("convert to data url");
+      var canvas = document.createElement("canvas");
+      var ctx = canvas.getContext("2d");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      //console.log("creating temp canvas" ,w,h);
+      ctx.drawImage(img, 0,0);
+      var bmp = ctx.getImageData(0,0,canvas.width,canvas.height);
+
+      convertImageData(bmp);
+
+      ctx.putImageData(bmp,0,0);
+      return canvas.toDataURL();
+    }
+
+    // time to beat: 282ms
+    // time to beat: 145ms (2x)
+    // time to beat: 73ms (-3.86x)
+    // FIXME: try optimizing by reusing a color object to avoid memory allocation inside the loop
+    // FIXME: try optimizing by reusing imagedata objects between successive calls.
+    function convertImageData(imagedata, alpha) {
+      var bmp = imagedata.data;
+      // var matches = new Array(bmp.length/4);
+      var blockSize  = 4;
+
+      for (var y = 0 ; y < imagedata.height ; y+=blockSize )
+      for (var x = 0 ; x < imagedata.width ; x+=blockSize )
+      {
+        // sample
+        var sx = Math.min(x+Math.floor(blockSize/2), imagedata.width-1);
+        var sy = Math.min(y+Math.floor(blockSize/2), imagedata.height-1);
+        var i = (sy * imagedata.width + sx) * 4;
+        var red = bmp[i];
+        var green = bmp[i+1];
+        var blue = bmp[i+2];
+        var a = bmp[i+3] < 128 ? 0 : 255;
+
+        var match = convertColor(red, green, blue);
+        var color = match.color.rgb;
+
+        for (var ty = 0 ; ty < blockSize ; ty++ )
+        for (var tx = 0 ; tx < blockSize ; tx++ )
+        {
+          var ry = Math.min(y+ty, imagedata.height-1);
+          var rx = Math.min(x+tx, imagedata.width-1);
+          var k = ( ry*imagedata.width + rx ) * 4;
+          bmp[k] = color[0];
+          bmp[k+1] = color[1];
+          bmp[k+2] = color[2];
+          bmp[k+3] = a;
+        }
+      }
+    }
+
+    function convertColor(red,green,blue) {
+      var c64_color = null;
+      var min_error = Infinity;
+
+      for (var c in colors)
+      {
+        var color = colors[c];
+        var guess = color.rgb;
+        var w = weights[c];
+        //var abs = Math.sqr;
+        var dr = red - guess[0];
+        var dg = green - guess[1];
+        var db = blue - guess[2];
+        var error = dr*dr/w + dg*dg/w + db*db/w;
+
+        if (error < min_error)
+        {
+          c64_color = color;
+          min_error = error;
+        }
+
+        if (error < threshhold)
+        {
+          break;
+        }
+      }
+
+      return { color: c64_color, error:min_error, earlyExit : c };
+    }
+
+    function setWeight(key, value) {
+      weights[key] = value;
+    }
+
+    function setThreshold(t) {
+      threshhold = t*t;
+    }
+
+    function init() {
+      weights = createWeights();
+    }
+
+    init();
+
+    return {
+      convertColor : convertColor,
+      convertImageData: convertImageData,
+      getColorsAndWeights :  getColorsAndWeights, // TODO : not expose this as immutable
+      retrofy : retrofy,
+      setThreshold : setThreshold,
+      setWeight : setWeight
+    };
+  };
+
+  // export
+  window.Retrofy = Retrofy;
+  Retrofy.Colors = {};
+
+}(zepQuery));
+
+;/*globals Retrofy */
+
+(function() {
+  "use strict";
+
+  Retrofy.Colors.C64 = {
     "0": {
         "name": "Black",
         "rgb": [0, 0, 0]
@@ -2889,18 +3188,23 @@ Retrofy.Colors.C64 = {
         "name": "LGrey",
         "rgb": [192, 192, 192]
     }
-};
+  };
+
+}());
 
 // // convert to css
 // for ( var k in Retrofy.Colors.C64 ) {
 //   var color = Retrofy.Colors.C64[k];
 //   console.log("."+color.name+" { color: rgb(" + color.rgb[0] +"," + color.rgb[1] + "," + color.rgb[2] + "); }");
 //  }
-;// from: http://www.thealmightyguru.com/Games/Hacking/Wiki/index.php?title=NES_Palette
-var Retrofy = Retrofy || {};
-Retrofy.Colors = Retrofy.Colors || {};
+;/*globals Retrofy */
 
-Retrofy.Colors.NES = {
+// from: http://www.thealmightyguru.com/Games/Hacking/Wiki/index.php?title=NES_Palette
+
+(function() {
+  "use strict";
+
+  Retrofy.Colors.NES = {
     "0" : { rgb: [0,0,0] },
     "1" : { rgb: [124,124,124] },
     "2" : { rgb: [0,0,252] },
@@ -2956,429 +3260,162 @@ Retrofy.Colors.NES = {
     "60" : { rgb: [184,248,216] },
     "61" : { rgb: [0,252,252] },
     "62" : { rgb: [248,216,248] }
-};
-;// from: http://en.wikipedia.org/wiki/ZX_Spectrum_graphic_modes
-var Retrofy = Retrofy || {};
-Retrofy.Colors = Retrofy.Colors || {};
-
-Retrofy.Colors.ZXSpectrum = {
-  "black0": { rgb : [0,0,0] },
-  "blue0": { rgb : [0,0,205] },
-  "red0": { rgb : [205,0,0] },
-  "magenta0": { rgb : [205,0,205] },
-  "green0": { rgb : [0,205,0] },
-  "cyan0": { rgb : [0,205,205] },
-  "yellow0": { rgb : [0,205,205] },
-  "white0": { rgb : [205,205,205] },
-
-  "blue1": { rgb: [0,0,255] },
-  "red1": { rgb: [255,0,0] },
-  "magenta1": { rgb: [255,0,255] },
-  "green1": { rgb: [0,255,0] },
-  "cyan1": { rgb: [0,255,255] },
-  "yellow1": { rgb: [255,255,0] },
-  "white1": { rgb: [255,255,255] }
-};;/*global  document, Zepto, _, console, RGBColor, Utils */
-var Retrofy = (function($) {
-  "use strict";
-
-  var colors = Retrofy.Colors.ZXSpectrum;
-  var keys = _.keys(colors);
-  var weights;
-  var threshhold = 2;
-
-  function createWeights () {
-    var weights = {};
-    _.each(colors, function(v, k) { weights[k] = 1; });
-    return weights;
-  }
-
-  function getColorsAndWeights() {
-    var result = {};
-    _.each(colors, function(value, key) {
-      value.key = key;
-      result[key] = { color: value, weight : weights[key] } ;
-    });
-
-    return result;
-  }
-
-  function retrofy(element) {
-    var $element = $(element);
-    //console.log(element.tagName);
-    switch (element.tagName)
-    {
-      // skip these
-      case "HTML":
-      case "HEAD":
-      case "STYLE":
-      case "SCRIPT":
-      case "TITLE":
-      case "META":
-      case "LINK":
-        break;
-
-      case "IMG":
-        convertImage($element);
-        break;
-
-      default:
-        convertGeneric($element);
-        break;
-    }
-  }
-
-  function convertGeneric($element) {
-    convertColors($element);
-    convertBackground($element);
-    convertFont($element);
-  }
-
-  function convertColors(el) {
-    var colorProps = ["color", "background-color", "border-color"];
-    var $el = $(el);
-    $.each(colorProps, function(i,propName) {
-      var orgColor = $el.data("original-" + propName);
-      var color = orgColor || $el.css(propName);
-      if (!orgColor) $el.data("original-" + propName, color);
-
-      if (!color | color == "rgba(0, 0, 0, 0)") return;
-      var parsedColor = new RGBColor(color);
-      // console.log(parsedColor);
-      var rgb = Retrofy.convertColor(parsedColor.r, parsedColor.g, parsedColor.b).color.rgb;
-      // console.log(rgb);
-      var newColor = Utils.rgbString(rgb[0],rgb[1],rgb[2]);
-      // console.log(el.tagName, propName,color, parsedColor, rgb, newColor);
-      $el.css(propName, newColor);
-    });
-  }
-
-  function convertFont($el) {
-    $el.css("font-family", "'c64' !important");
-  }
-
-  function convertBackground($el) {
-    var bgImage = $el.css("background-image");
-
-    if (!bgImage) return;
-    if (!bgImage.length) return;
-    if (bgImage == "none") return;
-
-    var orgSrc = $el.data("orginal-url");
-    var src = orgSrc || Utils.parseCssUrl(bgImage);
-
-    if (!orgSrc)
-      $el.data("orginal-url", src);
-    //console.log(bgImage, src);
-
-    var img = new Image();
-
-    // support cross-origin requested images that are served with a CORS header
-    // http://www.whatwg.org/specs/web-apps/current-work/multipage/fetching-resources.html#potentially-cors-enabled-fetch
-    img.crossOrigin = "anonymous";
-
-    img.onload = function() {
-      var src = convertImageToDataUrl(img);
-      $el.css("background-image", "url(" + src + ")");
-      img.onload = undefined;
-    };
-    img.src = src;
-  }
-
-  function tryConvertImage(el) {
-    //console.log("be converted!" , el);
-
-    try
-    {
-      return convertImage(el);
-    }
-    catch(ex)
-    {
-      console.warn(ex,"image not loaded yet, attaching load event");
-      el.onload = function () {
-        //console.log("converting second try");
-        try
-        {
-          return convertImage(el);
-        }
-        catch(ex2)
-        {
-          console.error(ex2);
-        }
-      };
-    }
-  }
-
-  // FIXME: for CORS support, add crossOrigin = 'anonymous'
-  function convertImage($img) {
-    var img = $img[0];
-
-    if (img._converting)
-      return;
-
-    img._converting = true;
-
-    img.onload = function() {
-      img.onload = undefined;
-      console.log("done");
-      img._converting = false;
-    };
-
-    var orgUrl = $(img).data("orginal-url");
-    if (orgUrl && orgUrl.length)
-    {
-      var temp = new Image();
-      temp.crossOrigin = "anonymous";
-      temp.onload = function() {
-        //console.log("temp done");
-        img.src = convertImageToDataUrl(temp);
-      };
-      temp.src = orgUrl;
-    }
-    else
-    {
-      $(img).data("orginal-url", img.src);
-    }
-
-    img.src = convertImageToDataUrl(img);
-    img._converting = false;
-  }
-
-  function convertImageToDataUrl(img) {
-    //console.log("convert to data url");
-    var canvas = document.createElement("canvas");
-    var ctx = canvas.getContext("2d");
-    canvas.width = img.width;
-    canvas.height = img.height;
-    //console.log("creating temp canvas" ,w,h);
-    ctx.drawImage(img, 0,0);
-    var bmp = ctx.getImageData(0,0,canvas.width,canvas.height);
-
-    convertImageData(bmp);
-
-    ctx.putImageData(bmp,0,0);
-    return canvas.toDataURL();
-  }
-
-  // time to beat: 282ms
-  // time to beat: 145ms (2x)
-  // time to beat: 73ms (-3.86x)
-  // FIXME: try optimizing by reusing a color object to avoid memory allocation inside the loop
-  // FIXME: try optimizing by reusing imagedata objects between successive calls.
-  function convertImageData(imagedata, alpha) {
-    var bmp = imagedata.data;
-    // var matches = new Array(bmp.length/4);
-    var blockSize  = 4;
-
-    for (var y = 0 ; y < imagedata.height ; y+=blockSize )
-    for (var x = 0 ; x < imagedata.width ; x+=blockSize )
-    {
-      // sample
-      var sx = Math.min(x+Math.floor(blockSize/2), imagedata.width-1);
-      var sy = Math.min(y+Math.floor(blockSize/2), imagedata.height-1);
-      var i = (sy * imagedata.width + sx) * 4;
-      var red = bmp[i];
-      var green = bmp[i+1];
-      var blue = bmp[i+2];
-      var a = bmp[i+3] < 128 ? 0 : 255;
-
-      var match = convertColor(red, green, blue);
-      var color = match.color.rgb;
-
-      for (var ty = 0 ; ty < blockSize ; ty++ )
-      for (var tx = 0 ; tx < blockSize ; tx++ )
-      {
-        var ry = Math.min(y+ty, imagedata.height-1);
-        var rx = Math.min(x+tx, imagedata.width-1);
-        var k = ( ry*imagedata.width + rx ) * 4;
-        bmp[k] = color[0];
-        bmp[k+1] = color[1];
-        bmp[k+2] = color[2];
-        bmp[k+3] = a;
-      }
-    }
-  }
-
-  function convertColor(red,green,blue) {
-    var c64_color = null;
-    var min_error = Infinity;
-
-    for (var c in colors)
-    {
-      var color = colors[c];
-      var guess = color.rgb;
-      var w = weights[c];
-      //var abs = Math.sqr;
-      var dr = red - guess[0];
-      var dg = green - guess[1];
-      var db = blue - guess[2];
-      var error = dr*dr/w + dg*dg/w + db*db/w;
-
-      if (error < min_error)
-      {
-        c64_color = color;
-        min_error = error;
-      }
-
-      if (error < threshhold)
-      {
-        break;
-      }
-    }
-
-    return { color: c64_color, error:min_error, earlyExit : c };
-  }
-
-  function setWeight(key, value) {
-    weights[key] = value;
-  }
-
-  function setThreshold(t) {
-    threshhold = t*t;
-  }
-
-  function init() {
-    weights = createWeights();
-  }
-
-  init();
-
-  return {
-    convertColor : convertColor,
-    convertImageData: convertImageData,
-    getColorsAndWeights :  getColorsAndWeights, // TODO : not expose this as immutable
-    retrofy : retrofy,
-    setThreshold : setThreshold,
-    setWeight : setWeight
   };
 
-}(Zepto));
+}());
+;/*globals Retrofy */
 
-;/*global $,dat,_,Retrofy */
+(function() {
+  "use strict";
+
+  // from: http://en.wikipedia.org/wiki/ZX_Spectrum_graphic_modes
+  Retrofy.Colors.ZXSpectrum = {
+    "black0": { rgb : [0,0,0] },
+    "blue0": { rgb : [0,0,205] },
+    "red0": { rgb : [205,0,0] },
+    "magenta0": { rgb : [205,0,205] },
+    "green0": { rgb : [0,205,0] },
+    "cyan0": { rgb : [0,205,205] },
+    "yellow0": { rgb : [0,205,205] },
+    "white0": { rgb : [205,205,205] },
+
+    "blue1": { rgb: [0,0,255] },
+    "red1": { rgb: [255,0,0] },
+    "magenta1": { rgb: [255,0,255] },
+    "green1": { rgb: [0,255,0] },
+    "cyan1": { rgb: [0,255,255] },
+    "yellow1": { rgb: [255,255,0] },
+    "white1": { rgb: [255,255,255] }
+  };
+}());;/*global zepQuery,dat,_, Retrofy */
 
 (function ($) {
+  "use strict";
 
-    function Dashboard($elements) {
-      "use strict";
+  function Dashboard($elements, retrofy) {
 
-      var $dashboard, $button, $controls,
-        debug = false,
-        showOverlay = false;
+    var $dashboard, $button, $controls,
+      debug = false,
+      showOverlay = false;
 
-      var colorsAndWeights = Retrofy.getColorsAndWeights();
-      var labels = {};
-      // dat.gui.js
-      var gui = new dat.GUI({ autoPlace: false });
+    var colorsAndWeights = retrofy.getColorsAndWeights();
+    var labels = {};
+    // dat.gui.js
+    var gui = new dat.GUI({ autoPlace: false });
 
-      function slideDown() {
-        $dashboard.css({
-          top : -$dashboard.outerHeight() - $button.outerHeight()
-        });
-
-        $dashboard.animate({
-          top : -$dashboard.outerHeight()
-        },
-        {
-          duration: 400
-          //easing: "ease-out"
-        });
-      }
-
-      function toggleDashboard() {
-        debug=!debug;
-        $dashboard.animate({
-          top : debug ? 0 : -$dashboard.outerHeight()
-        },
-        {
-          duration : 200
-        });
-      }
-
-      //console.log(colorsAndWeights);
-
-      function createColorController(colorAndWeight) {
-        var label = colorAndWeight.color.name;
-        var controller = gui.add(labels, label , 0, 3);
-        var key = colorAndWeight.color.key;
-        controller.onChange(_.throttle(function(value) {
-          //console.log("update ",key , value);
-          Retrofy.setWeight(key,value);
-          $elements.retrofy();
-        },200));
-      }
-
-      // init
-
-      // inject css
-      var css = "#dashboard {  position: fixed;  background-color: rgba(0,0,0,1);  color: lime;  left:0;  font-family: 'PT Mono', sans-serif;  font-size: 14px;  padding: 20px;  border-radius: 10px;}.dashboard-panel, .dashboard-widget {  margin-right: 15px;  display: inline-block;  vertical-align: top;}#controls {  display: inline-block;  vertical-align: top;}#dashboard .close-button {   display: none;}.dg.main {  font-size: 13px;}button.dashboard-button {  display: inline-block;  font-size: 16px;  border:0;  background-color: black;  color: #eee;  border-radius: 5px 5px 5px 5px;  padding: 10px;  font-family: c64;}button:hover {  text-shadow: #8f8 0px 0px 5px;}.bottom-panel {  position: absolute;  bottom: -40px;}";
-      $("head").append($("<style>").text(css));
-
-      // inject html
-      $dashboard = $('<div id="dashboard" class="hidden"><div class="widgets"><div id="controls" class="dashboard-widget"></div><div id="status" class="dashboard-widget"></div></div><div class="bottom-panel"><button class="dashboard-button retro" data-role="dashboard-open">retrofy</button></div></div>');
-      $("body").append($dashboard);
-
-      $button = $dashboard.find("[data-role~='dashboard-open']");
-      $controls = $("#controls");
-
-      //gui.remember(Settings);
-      $controls.append( gui.domElement );
-
-      $(document).keydown(function(e) {
-        if ( e.which == 27 ) toggleDashboard();
-        if ( e.which == 79 ) showOverlay = !showOverlay;
+    function slideDown() {
+      $dashboard.css({
+        top : -$dashboard.outerHeight() - $button.outerHeight()
       });
 
-      $button.click(toggleDashboard);
-
-      _.each(colorsAndWeights, function(obj) {
-        labels[obj.color.name] = 1;
+      $dashboard.animate({
+        top : -$dashboard.outerHeight()
+      },
+      {
+        duration: 400
+        //easing: "ease-out"
       });
-
-      for (var key in colorsAndWeights)
-        createColorController( colorsAndWeights[key] )  ;
-
-      labels.threshhold = 1;
-
-      var threshholdController = gui.add(labels, "threshhold" , 0, 88);
-      threshholdController.onChange(function(value) {
-        Retrofy.setThreshold(value);
-        $elements.retrofy();
-      });
-
-
-      $dashboard.show();
-      slideDown();
-
-      return {
-        slideDown : slideDown,
-        toggleDashboard : toggleDashboard
-      };
     }
 
-    window.Retrofy = Retrofy || {};
-    window.Retrofy.Dashboard = Dashboard;
+    function toggleDashboard() {
+      debug=!debug;
+      $dashboard.animate({
+        top : debug ? 0 : -$dashboard.outerHeight()
+      },
+      {
+        duration : 200
+      });
+    }
 
-}(window.jQuery || window.Zepto));
-;/*global Zepto,Retrofy,Dashboard */
+    //console.log(colorsAndWeights);
+
+    function createColorController(colorAndWeight) {
+      var label = colorAndWeight.color.name;
+      var controller = gui.add(labels, label , 0, 3);
+      var key = colorAndWeight.color.key;
+      controller.onChange(_.throttle(function(value) {
+        //console.log("update ",key , value);
+        retrofy.setWeight(key,value);
+        $elements.retrofy();
+      },200));
+    }
+
+    // init
+
+    // inject css
+    var css = "#dashboard {  position: fixed;  background-color: rgba(0,0,0,1);  color: lime;  left:0;  font-family: 'PT Mono', sans-serif;  font-size: 14px;  padding: 20px;  border-radius: 10px;}.dashboard-panel, .dashboard-widget {  margin-right: 15px;  display: inline-block;  vertical-align: top;}#controls {  display: inline-block;  vertical-align: top;}#dashboard .close-button {   display: none;}.dg.main {  font-size: 13px;}button.dashboard-button {  display: inline-block;  font-size: 16px;  border:0;  background-color: black;  color: #eee;  border-radius: 5px 5px 5px 5px;  padding: 10px;  font-family: c64;}button:hover {  text-shadow: #8f8 0px 0px 5px;}.bottom-panel {  position: absolute;  bottom: -40px;}";
+    $("head").append($("<style>").text(css));
+
+    // inject html
+    $dashboard = $('<div id="dashboard" class="hidden"><div class="widgets"><div id="controls" class="dashboard-widget"></div><div id="status" class="dashboard-widget"></div></div><div class="bottom-panel"><button class="dashboard-button retro" data-role="dashboard-open">retrofy</button></div></div>');
+    $("body").append($dashboard);
+
+    $button = $dashboard.find("[data-role~='dashboard-open']");
+    $controls = $("#controls");
+
+    //gui.remember(Settings);
+    $controls.append( gui.domElement );
+
+    $(document).keydown(function(e) {
+      if ( e.which == 27 ) toggleDashboard();
+      if ( e.which == 79 ) showOverlay = !showOverlay;
+    });
+
+    $button.click(toggleDashboard);
+
+    _.each(colorsAndWeights, function(obj) {
+      labels[obj.color.name] = 1;
+    });
+
+    for (var key in colorsAndWeights)
+      createColorController( colorsAndWeights[key] )  ;
+
+    labels.threshhold = 1;
+
+    var threshholdController = gui.add(labels, "threshhold" , 0, 88);
+    threshholdController.onChange(function(value) {
+      retrofy.setThreshold(value);
+      $elements.retrofy();
+    });
+
+
+    $dashboard.show();
+    slideDown();
+
+    return {
+      slideDown : slideDown,
+      toggleDashboard : toggleDashboard
+    };
+  }
+
+  Retrofy.Dashboard = Dashboard;
+
+}(zepQuery));
+;/*global zepQuery,Retrofy */
+
 (function($) {
   "use strict";
 
+  var dashboard;
+  var retrofy;
+  var defaults = {}, settings = {};
+
   $.fn.retrofy = function(options) {
-    var defaults = {}, settings = {};
-    var dashboard;
 
-    function init($elements, options) {
-      settings = $.extend({}, defaults, options);
-      $.fn.retrofy.defaults = defaults;
-      $.fn.retrofy.settings = settings;
+    settings = $.extend(settings, defaults, options);
+    $.fn.retrofy.defaults = defaults;
+    $.fn.retrofy.settings = settings;
 
-      if (settings.dashboard === true)
-        dashboard = dashboard || new Retrofy.Dashboard($elements);
+    if (!settings.palette)
+      throw new Error("parameter 'palette' missing");
 
-      return $elements.each(function() { Retrofy.retrofy(this); });
-    }
+    retrofy = retrofy || new Retrofy(options.palette);
 
-    return init(this, options);
+    if (settings.dashboard === true)
+      dashboard = dashboard || new Retrofy.Dashboard(this, retrofy);
+
+    return this.each(function() { retrofy.retrofy(this); });
+
   };
 
-}(window.jQuery || Zepto)); // fallback to the included Zepto if jQuery is not found
+}(zepQuery));

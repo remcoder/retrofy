@@ -1,6 +1,9 @@
-var Retrofy = Retrofy || {};
-Retrofy.Colors = Retrofy.Colors || {};
-Retrofy.Colors.C64 = {
+/*globals Retrofy */
+
+(function() {
+  "use strict";
+
+  Retrofy.Colors.C64 = {
     "0": {
         "name": "Black",
         "rgb": [0, 0, 0]
@@ -65,7 +68,9 @@ Retrofy.Colors.C64 = {
         "name": "LGrey",
         "rgb": [192, 192, 192]
     }
-};
+  };
+
+}());
 
 // // convert to css
 // for ( var k in Retrofy.Colors.C64 ) {
