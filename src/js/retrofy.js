@@ -2,7 +2,7 @@
 var Retrofy = (function($) {
   "use strict";
 
-  var colors = Retrofy.Colors.NES;
+  var colors = Retrofy.Colors.ZXSpectrum;
   var keys = _.keys(colors);
   var weights;
   var threshhold = 2;

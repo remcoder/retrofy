@@ -1,4 +1,4 @@
-/*! jQuery.Retrofy.js - v0.1.0 - 2012-11-27
+/*! jQuery.Retrofy.js - v0.1.0 - 2012-11-29
 * http://realstuffforabstractpeople.com/
 * Copyright (c) 2012 @remcoder; Licensed MIT */
 ;/**
@@ -2957,11 +2957,32 @@ Retrofy.Colors.NES = {
     "61" : { rgb: [0,252,252] },
     "62" : { rgb: [248,216,248] }
 };
-;/*global  document, Zepto, _, console, RGBColor, Utils */
+;// from: http://en.wikipedia.org/wiki/ZX_Spectrum_graphic_modes
+var Retrofy = Retrofy || {};
+Retrofy.Colors = Retrofy.Colors || {};
+
+Retrofy.Colors.ZXSpectrum = {
+  "black0": { rgb : [0,0,0] },
+  "blue0": { rgb : [0,0,205] },
+  "red0": { rgb : [205,0,0] },
+  "magenta0": { rgb : [205,0,205] },
+  "green0": { rgb : [0,205,0] },
+  "cyan0": { rgb : [0,205,205] },
+  "yellow0": { rgb : [0,205,205] },
+  "white0": { rgb : [205,205,205] },
+
+  "blue1": { rgb: [0,0,255] },
+  "red1": { rgb: [255,0,0] },
+  "magenta1": { rgb: [255,0,255] },
+  "green1": { rgb: [0,255,0] },
+  "cyan1": { rgb: [0,255,255] },
+  "yellow1": { rgb: [255,255,0] },
+  "white1": { rgb: [255,255,255] }
+};;/*global  document, Zepto, _, console, RGBColor, Utils */
 var Retrofy = (function($) {
   "use strict";
 
-  var colors = Retrofy.Colors.NES;
+  var colors = Retrofy.Colors.ZXSpectrum;
   var keys = _.keys(colors);
   var weights;
   var threshhold = 2;
