@@ -2832,40 +2832,27 @@ window.Zepto = Zepto
     rgbString : rgbString
   };
 
-}());;/*global  document, zepQuery, _, console, RGBColor, Utils */
+}());;/*globals Retrofy,_,$ */
+var Context = function() {
+    "use strict";
+
+    // defaults
+    var palette = Retrofy.Colors.C64;
+    var weights = {};
+    _.each(palette, function(color, key) { weights[key] = 1; });
+
+    return {
+        elements : $(),
+        palette : palette,
+        weights : weights,
+        threshold : 1
+    };
+};
+;/*global  document, zepQuery, _, console, RGBColor, Utils */
 (function($) {
   "use strict";
 
-  var Retrofy = function(palette) {
-
-    var colors = Retrofy.Colors[palette];
-    if (!colors)
-      throw new Error("palette '{p}' not found".format({p:palette}));
-
-    var weights;
-    var threshhold = 2;
-
-    function setPalette(palette) {
-      init(palette);
-    }
-
-    function createWeights () {
-      var weights = {};
-      _.each(colors, function(v, k) { weights[k] = 1; });
-      return weights;
-    }
-
-    function getColorsAndWeights() {
-      var result = {};
-      _.each(colors, function(color, key) {
-        color.key = key;
-        if (!color.name)
-          color.name = key;
-        result[key] = { color: color, weight : weights[key] } ;
-      });
-
-      return result;
-    }
+  var Retrofy = function(context) {
 
     function retrofy(element) {
       var $element = $(element);
@@ -3067,11 +3054,11 @@ window.Zepto = Zepto
       var c64_color = null;
       var min_error = Infinity;
 
-      for (var c in colors)
+      for (var c in context.palette)
       {
-        var color = colors[c];
+        var color = context.palette[c];
         var guess = color.rgb;
-        var w = weights[c];
+        var w = context.weights[c];
         //var abs = Math.sqr;
         var dr = red - guess[0];
         var dg = green - guess[1];
@@ -3084,7 +3071,7 @@ window.Zepto = Zepto
           min_error = error;
         }
 
-        if (error < threshhold)
+        if (error < context.threshhold)
         {
           break;
         }
@@ -3093,30 +3080,10 @@ window.Zepto = Zepto
       return { color: c64_color, error:min_error, earlyExit : c };
     }
 
-    function setWeight(key, value) {
-      weights[key] = value;
-    }
-
-    function setThreshold(t) {
-      threshhold = t*t;
-    }
-
-    function init(palette) {
-      colors = Retrofy.Colors[palette];
-      weights = createWeights();
-    }
-
-    init(palette);
-
     return {
       convertColor : convertColor,
       convertImageData: convertImageData,
-      getColorsAndWeights :  getColorsAndWeights, // TODO : not expose this as immutable
-      getPalette : function() { return palette; },
-      retrofy : retrofy,
-      setPalette : setPalette,
-      setThreshold : setThreshold,
-      setWeight : setWeight
+      retrofy : retrofy
     };
   };
 
@@ -3300,7 +3267,7 @@ window.Zepto = Zepto
 (function ($) {
   "use strict";
 
-  function Dashboard($elements, retrofy) {
+  function Dashboard(context, render) {
 
     var $dashboard, $button, $controls,
       debug = false,
@@ -3308,9 +3275,6 @@ window.Zepto = Zepto
 
     var colorControllers = [];
 
-    var labels = {};
-    labels.palette = retrofy.getPalette();
-    // dat.gui.js
     var gui = new dat.GUI({ autoPlace: false });
 
     function slideDown() {
@@ -3339,15 +3303,9 @@ window.Zepto = Zepto
 
     //console.log(colorsAndWeights);
 
-    function createColorController(colorAndWeight) {
-      var label = colorAndWeight.color.name;
-      var controller = gui.add(labels, label , 0, 3);
-      var key = colorAndWeight.color.key;
-      controller.onChange(_.throttle(function(value) {
-        //console.log("update ",key , value);
-        retrofy.setWeight(key,value);
-        $elements.retrofy();
-      },200));
+    function createColorController(key) {
+      var controller = gui.add(context.weights, key , 0, 3);
+      controller.onChange(_.throttle(render, 200));
 
       return controller;
     }
@@ -3375,41 +3333,36 @@ window.Zepto = Zepto
 
     $button.click(toggleDashboard);
 
-    function initColorSettings() {
-      colorControllers = [];
-      var colorsAndWeights = retrofy.getColorsAndWeights();
-      _.each(colorsAndWeights, function(obj) {
-        labels[obj.color.name] = 1;
+    function resetColorSettings() {
+      _.each(colorControllers, function(contr) {
+        gui.remove(contr);
       });
 
-      for (var key in colorsAndWeights) {
-        var c = createColorController( colorsAndWeights[key] );
+      colorControllers = [];
+
+      _.each(context.palette, function(color, key) {
+        context.weights[key] = 1;
+      });
+
+      for (var key in context.palette) {
+        var c = createColorController( key );
         colorControllers.push(c);
       }
     }
 
-
-
-    var paletteController = gui.add(labels, "palette" , ["C64", "NES", "ZXSpectrum"] );
+    var paletteController = gui.add({ palette: null }, "palette" , ["C64", "NES", "ZXSpectrum"] );
     paletteController.onChange(function(value) {
-      retrofy.setPalette(value);
+      context.palette = Retrofy.Colors[value];
 
-      _.each(colorControllers, function(contr) {
-        gui.remove(contr);
-      });
-      initColorSettings();
-      $elements.retrofy();
+      resetColorSettings();
+
+      render();
     });
 
-     labels.threshhold = 1;
+    var threshholdController = gui.add(context, "threshold" , 0, 88);
+    threshholdController.onChange(_.throttle(render, 200));
 
-    var threshholdController = gui.add(labels, "threshhold" , 0, 88);
-    threshholdController.onChange(function(value) {
-      retrofy.setThreshold(value);
-      $elements.retrofy();
-    });
-
-    initColorSettings();
+    resetColorSettings();
     $dashboard.show();
     slideDown();
 
@@ -3422,7 +3375,7 @@ window.Zepto = Zepto
   Retrofy.Dashboard = Dashboard;
 
 }(zepQuery));
-;/*global zepQuery,Retrofy */
+;/*global zepQuery,Retrofy,Context */
 
 (function($) {
   "use strict";
@@ -3430,6 +3383,7 @@ window.Zepto = Zepto
   var dashboard;
   var retrofy;
   var defaults = {}, settings = {};
+  var context = new Context();
 
   $.fn.retrofy = function(options) {
 
@@ -3440,10 +3394,13 @@ window.Zepto = Zepto
     if (!settings.palette)
       throw new Error("parameter 'palette' missing");
 
-    retrofy = retrofy || new Retrofy(options.palette);
+    retrofy = retrofy || new Retrofy(context);
 
-    if (settings.dashboard === true)
-      dashboard = dashboard || new Retrofy.Dashboard(this, retrofy);
+    if (settings.dashboard === true) {
+      dashboard = dashboard || new Retrofy.Dashboard(context, function() {
+        this.each(function() { retrofy.retrofy(this); });
+      }.bind(this));
+    }
 
     return this.each(function() { retrofy.retrofy(this); });
 
