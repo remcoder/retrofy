@@ -5,6 +5,8 @@
 
   function Dashboard(context, render) {
 
+    render = render || function() {};
+
     var $dashboard, $button, $controls,
       debug = false,
       showOverlay = false;
