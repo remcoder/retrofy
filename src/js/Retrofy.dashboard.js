@@ -88,7 +88,7 @@
       }
     }
 
-    var paletteController = gui.add({ palette: null }, "palette" , ["C64", "NES", "ZXSpectrum"] );
+    var paletteController = gui.add({ palette: null }, "palette" , _.keys(Retrofy.Colors) );
     paletteController.onChange(function(value) {
       context.palette = Retrofy.Colors[value];
 
